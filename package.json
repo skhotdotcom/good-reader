@@ -16,10 +16,7 @@
   "build": {
     "appId": "com.goodreader.app",
     "productName": "Good Reader",
-    "asar": true,
-    "asarUnpack": [
-      "node_modules/better-sqlite3/**/*"
-    ],
+    "asar": false,
     "directories": {
       "output": "dist-electron"
     },
