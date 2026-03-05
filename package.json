@@ -2,10 +2,12 @@
   "name": "good-reader",
   "version": "0.1.0",
   "private": true,
+  "description": "A local-first RSS reader inspired by Google Reader",
+  "author": "Scott Purcell",
   "main": "electron/main.js",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
     "electron:dev": "concurrently --kill-others \"npm run dev\" \"electron .\"",
@@ -29,7 +31,9 @@
       "node_modules/**/*",
       "!node_modules/.cache/**/*",
       "!node_modules/**/*.map",
-      "!**/.git/**/*"
+      "!**/.git/**/*",
+      "!pnpm-lock.yaml",
+      "!yarn.lock"
     ],
     "mac": {
       "target": [
