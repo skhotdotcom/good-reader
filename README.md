@@ -6,6 +6,18 @@ A local-first RSS reader inspired by Google Reader. Built with Next.js, SQLite, 
 
 ---
 
+## About this project
+
+I built this because I missed Google Reader. Clean feeds, no algorithm, no ads — just the internet the way I used to learn from it.
+
+I used [Claude Code](https://claude.ai/code) to build it, which means the tool I used to make this is the same thing I was trying to understand. That felt like the right way to learn.
+
+If it brings back the feeling too, star the repo. It helps more people find it.
+
+And if you really love it: [buy me a coffee](https://buymeacoffee.com). Hon, you didn't have to, but I appreciate it.
+
+---
+
 ## Features
 
 ### Core Reading Experience
