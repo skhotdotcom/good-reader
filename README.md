@@ -14,7 +14,7 @@ I used [Claude Code](https://claude.ai/code) to build it, which means the tool I
 
 If it brings back the feeling too, star the repo. It helps more people find it.
 
-And if you really love it: [buy me a coffee](https://buymeacoffee.com). Hon, you didn't have to, but I appreciate it.
+And if you really love it: [buy me a coffee](https://paypal.me/heavycreams). Hon, you didn't have to, but I appreciate it.
 
 ---
 
