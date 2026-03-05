@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Star, ExternalLink, BookOpen, Sparkles, X, AlertCircle, Plus } from 'lucide-react';
+import { Star, ExternalLink, BookOpen, Sparkles, X, AlertCircle, Plus, Tags } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Article, ArticleTag } from './article-list';
@@ -199,6 +199,9 @@ export function ReadingPane({
   const [summary, setSummary] = useState<string | null>(null);
   const [summarizing, setSummarizing] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [autoTagging, setAutoTagging] = useState(false);
+  const [autoTagResult, setAutoTagResult] = useState<string | null>(null);
+  const [autoTagError, setAutoTagError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -209,6 +212,8 @@ export function ReadingPane({
     }
     setSummary(null);
     setSummaryError(null);
+    setAutoTagResult(null);
+    setAutoTagError(null);
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
   }, [article?.id, article?.content]);
 
@@ -230,6 +235,37 @@ export function ReadingPane({
       setSummaryError('Network error — could not reach the server');
     } finally {
       setSummarizing(false);
+    }
+  }
+
+  async function handleAutoTag() {
+    if (!article) return;
+    setAutoTagging(true);
+    setAutoTagResult(null);
+    setAutoTagError(null);
+    try {
+      const res = await fetch(`/api/articles/${article.id}/auto-tag`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ baseUrl: lmStudioConfig.baseUrl, model: lmStudioConfig.model }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setAutoTagError(data.error || 'Auto-tagging failed');
+      } else {
+        onTagsChange(article.id, data.tags);
+        onTagCreated(); // refresh sidebar counts
+        const added = data.appliedCount + data.createdCount;
+        setAutoTagResult(
+          added === 0
+            ? 'No new tags to apply'
+            : `${added} tag${added === 1 ? '' : 's'} added${data.createdCount > 0 ? ` (${data.createdCount} new)` : ''}`
+        );
+      }
+    } catch {
+      setAutoTagError('Network error — could not reach the server');
+    } finally {
+      setAutoTagging(false);
     }
   }
 
@@ -285,6 +321,17 @@ export function ReadingPane({
               <Sparkles className={cn('h-3.5 w-3.5', summarizing && 'animate-pulse')} />
               {summarizing ? 'Summarizing…' : 'Summarize'}
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn('h-8 gap-1 text-xs', autoTagging && 'opacity-70 cursor-not-allowed')}
+              onClick={handleAutoTag}
+              disabled={autoTagging}
+              title="Auto-tag with local LLM"
+            >
+              <Tags className={cn('h-3.5 w-3.5', autoTagging && 'animate-pulse')} />
+              {autoTagging ? 'Tagging…' : 'Auto-tag'}
+            </Button>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => onToggleStar(article)} title={article.is_starred ? 'Unstar' : 'Star'}>
               <Star className={cn('h-4 w-4', article.is_starred ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground')} />
             </Button>
@@ -301,6 +348,26 @@ export function ReadingPane({
             )}
           </div>
         </div>
+
+        {/* Auto-tag feedback */}
+        {(autoTagResult || autoTagError) && (
+          <div className={cn(
+            'flex items-center gap-1.5 mt-2 text-xs px-2 py-1 rounded',
+            autoTagError ? 'text-destructive bg-destructive/10' : 'text-muted-foreground bg-muted'
+          )}>
+            {autoTagError
+              ? <AlertCircle className="h-3 w-3 flex-shrink-0" />
+              : <Tags className="h-3 w-3 flex-shrink-0" />
+            }
+            <span>{autoTagError || autoTagResult}</span>
+            <button
+              onClick={() => { setAutoTagResult(null); setAutoTagError(null); }}
+              className="ml-auto hover:opacity-70"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        )}
 
         {/* Tags row */}
         <div className="flex items-center flex-wrap gap-1.5 mt-2.5">

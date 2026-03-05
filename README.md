@@ -10,7 +10,7 @@ A local-first RSS reader inspired by Google Reader. Built with Next.js, SQLite, 
 
 ### Core Reading Experience
 - **Three-panel layout** — folders/feeds sidebar, article list, reading pane
-- **Unread & Starred views** — fixed items at the top of the sidebar
+- **Unread & Starred views** — fixed items at the top of the sidebar; Unread is the default view
 - **Article content** — full article body rendered in a clean typography layout
 - **Open original** — open the source article in a new tab
 - **Mark as read/unread** — automatic on open, or toggle manually
@@ -19,8 +19,9 @@ A local-first RSS reader inspired by Google Reader. Built with Next.js, SQLite, 
 ### Feed Management
 - **Add feeds** — paste any RSS/Atom URL
 - **Feed auto-discovery** — paste a site URL and Good Reader finds the RSS feed automatically
+- **Feed favicons** — icons fetched by parsing each site's `<link rel="icon">` tag, not just `/favicon.ico`
 - **Folders** — organize feeds into collapsible folders (collapsed by default)
-- **Refresh All** — fetch latest articles from all feeds at once
+- **Refresh All** — fetch latest articles from all feeds at once; updates title, URL, and favicon on each refresh
 - **OPML import/export** — migrate from Google Reader, Feedly, or any other RSS reader
 
 ### Article Discovery
@@ -28,10 +29,17 @@ A local-first RSS reader inspired by Google Reader. Built with Next.js, SQLite, 
 - **Load more** — pagination for feeds with large backlogs (50 articles per page)
 - **Auto-scroll** — article list keeps the selected item in view during keyboard navigation
 
-### AI Summarization
-- **Summarize with local LLM** — one-click summaries via [LM Studio](https://lmstudio.ai/) running on your machine
-- Configurable server URL and model name in Settings
-- Summary appears inline above the article content, dismissible with ×
+### Article Tagging
+- **Tags** — create and manage tags across all articles
+- **Tag filtering** — click any tag in the sidebar to filter articles by that tag
+- **Inline tag manager** — add or remove tags directly from the reading pane header
+- **Tag pills** — tags shown on article cards in the list view (up to 3, with overflow count)
+- **Auto-color** — tags are automatically assigned colors from a preset palette
+
+### AI Features (via LM Studio)
+- **Summarize** — one-click bullet-point summaries using a local LLM
+- **Auto-tag** — automatically generates and applies relevant tags to an article using a local LLM; reuses existing tags and creates new ones freely (3–6 tags per article)
+- Both features are configurable: set the server URL and model name in Settings
 
 ### Keyboard Shortcuts
 | Key | Action |
@@ -98,14 +106,14 @@ The SQLite database is created automatically at `data/good-reader.db` on first r
 2. Click **···** → **Import OPML** in Good Reader
 3. All feeds and folders are imported automatically
 
-### AI Summarization Setup
+### AI Features Setup
 
 1. Download and open [LM Studio](https://lmstudio.ai/)
 2. Load a model (e.g. `meta-llama-3.1-8b-instruct`)
 3. Start the local server (default port: `1234`)
-4. In Good Reader: **···** → **Settings** → **AI Summarization**
+4. In Good Reader: **···** → **Settings** → **AI**
 5. Set the model name to match what's shown in LM Studio → **Save**
-6. Open any article and click **✨ Summarize**
+6. Open any article and click **✨ Summarize** or **🏷 Auto-tag**
 
 ---
 
@@ -120,26 +128,33 @@ app/
     folders/              — GET/POST/PATCH/DELETE folders
     feeds/                — GET/POST/PATCH/DELETE feeds
       discover/           — GET: auto-discover RSS from a site URL
-      refresh-all/        — POST: refresh all feeds
-      [id]/refresh/       — POST: refresh single feed
-    articles/             — GET (with FTS search, filters) / PATCH
+      refresh-all/        — POST: refresh all feeds + update metadata/favicons
+      [id]/refresh/       — POST: refresh single feed + update metadata/favicons
+    articles/             — GET (with FTS search, tag filter) / PATCH
       [id]/summarize/     — POST: summarize via LM Studio
+      [id]/auto-tag/      — POST: generate & apply tags via LM Studio
+      [id]/tags/          — POST: add tag to article
+      [id]/tags/[tagId]/  — DELETE: remove tag from article
       mark-all-read/      — POST: bulk mark read
+    tags/                 — GET: list tags, POST: create tag
+      [id]/               — PATCH: rename, DELETE: remove tag
     opml/                 — GET: export, POST: import
 components/
-  sidebar.tsx             — feed/folder tree with context menus
-  article-list.tsx        — scrollable article cards, search bar
-  reading-pane.tsx        — article content + AI summary
+  sidebar.tsx             — feed/folder tree + tags section with context menus
+  article-list.tsx        — scrollable article cards with tag pills
+  reading-pane.tsx        — article content, inline tag manager, AI summary/auto-tag
   top-bar.tsx             — Refresh All, Add Feed, ··· menu
   add-feed-dialog.tsx     — add feed with auto-discovery
   settings-dialog.tsx     — keyboard shortcuts + LM Studio config
   keyboard-shortcuts.tsx  — shortcut reference dialog
 lib/
-  db.ts                   — SQLite singleton + schema migrations + FTS5
-  feed-fetcher.ts         — rss-parser wrapper
+  db.ts                   — SQLite singleton + schema migrations + FTS5 + tags tables
+  feed-fetcher.ts         — rss-parser wrapper + async favicon resolution
   keybindings.ts          — keybinding types, defaults, localStorage
   lmstudio.ts             — LM Studio config types, localStorage
   utils.ts                — shadcn cn() helper
+scripts/
+  backfill-favicons.mjs   — one-time script to populate favicon_url for existing feeds
 ```
 
 ---
@@ -161,13 +176,18 @@ lib/
 - [x] Reading pane scrolls to top on article change
 - [x] Customizable keyboard shortcuts (Settings)
 - [x] Folders collapsed by default
-- [x] "Inactive" folder auto-organization for stale feeds
+- [x] "Inactive" folder for stale feeds
 - [x] AI summarization via LM Studio (local LLM)
+- [x] Article tagging with tag-based sidebar filtering
+- [x] Inline tag manager in the reading pane
+- [x] Tag pills on article cards
+- [x] Auto-tag articles with LLM (creates new tags freely)
+- [x] Feed favicons via `<link rel="icon">` parsing (not just `/favicon.ico`)
+- [x] Feed metadata (title, URL, favicon) updated on every refresh
 
 ### Backlog
 - [ ] Dark / light mode toggle
 - [ ] "Read later" queue
-- [ ] Article tagging and tag-based filtering
 - [ ] Mobile-responsive layout
 - [ ] PWA support for offline reading
 
@@ -178,7 +198,8 @@ lib/
 - All API routes require `export const dynamic = 'force-dynamic'` to prevent build-time SQLite errors
 - Tailwind v4: use `w-[360px]` not `w-90` (only multiples of 4 up to `w-96` are valid)
 - Flex scroll pattern: `flex-1 min-h-0 overflow-y-auto` + `overflow-hidden` on the parent container
-- SQLite FTS5 column names: avoid `content` and `rank` (reserved by FTS5) — use `lead`/`body` instead
+- SQLite FTS5: use actual table name in `MATCH` query, not an alias
+- Tags use `json_group_array` / `json_object` correlated subquery to avoid N+1 queries
 - The database file at `data/good-reader.db` is gitignored
 
 ---
