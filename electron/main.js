@@ -1,48 +1,64 @@
 const { app, BrowserWindow, shell } = require('electron');
-const { spawn } = require('child_process');
 const path = require('path');
-const waitOn = require('wait-on');
+const http = require('http');
 
-const PORT = process.env.PORT || 3000;
+const PORT = parseInt(process.env.PORT || '3000', 10);
 const isDev = !app.isPackaged;
 
 let mainWindow;
-let nextProcess;
 
-// In production, the app files live next to the electron/ folder inside the ASAR
 function getAppRoot() {
+  // In a packaged build, resources are in process.resourcesPath/app
   return isDev
     ? path.join(__dirname, '..')
     : path.join(process.resourcesPath, 'app');
 }
 
-function startNextServer() {
-  const appRoot = getAppRoot();
-  const userDataPath = app.getPath('userData');
-  const nextBin = path.join(appRoot, 'node_modules', '.bin', 'next');
-
-  nextProcess = spawn(nextBin, ['start', '--port', String(PORT)], {
-    cwd: appRoot,
-    env: {
-      ...process.env,
-      NODE_ENV: 'production',
-      // Tell db.ts where to store the SQLite database
-      GOOD_READER_DATA_DIR: userDataPath,
-    },
-    stdio: 'pipe',
-  });
-
-  nextProcess.stdout?.on('data', (d) =>
-    console.log('[next]', d.toString().trim())
-  );
-  nextProcess.stderr?.on('data', (d) =>
-    console.error('[next]', d.toString().trim())
-  );
-
-  nextProcess.on('exit', (code) => {
-    if (code !== 0 && code !== null) {
-      console.error(`[next] exited with code ${code}`);
+// Poll until Next.js is accepting connections — no external dependency needed
+function waitForPort(port, timeout = 30_000) {
+  return new Promise((resolve, reject) => {
+    const deadline = Date.now() + timeout;
+    function attempt() {
+      const req = http.get(`http://localhost:${port}`, (res) => {
+        res.resume();
+        resolve();
+      });
+      req.on('error', () => {
+        if (Date.now() < deadline) {
+          setTimeout(attempt, 500);
+        } else {
+          reject(new Error(`Next.js server on port ${port} did not start within ${timeout}ms`));
+        }
+      });
+      req.end();
     }
+    attempt();
+  });
+}
+
+// Run Next.js programmatically inside Electron's own Node runtime.
+// This avoids needing a standalone `node` binary or any .bin symlinks,
+// both of which break inside ASAR archives.
+async function startNextServer(appRoot) {
+  const { parse } = require('url');
+  const nextModule = require(path.join(appRoot, 'node_modules', 'next'));
+  const next = nextModule.default || nextModule;
+
+  const nextApp = next({ dev: false, dir: appRoot, port: PORT, hostname: '127.0.0.1' });
+  const handle = nextApp.getRequestHandler();
+
+  await nextApp.prepare();
+
+  await new Promise((resolve, reject) => {
+    http
+      .createServer((req, res) => handle(req, res, parse(req.url, true)))
+      .listen(PORT, '127.0.0.1', (err) => {
+        if (err) reject(err);
+        else {
+          console.log(`[good-reader] server ready on http://localhost:${PORT}`);
+          resolve();
+        }
+      });
   });
 }
 
@@ -52,7 +68,6 @@ async function createWindow() {
     height: 900,
     minWidth: 960,
     minHeight: 600,
-    // Seamless titlebar on macOS
     titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -61,13 +76,13 @@ async function createWindow() {
     },
   });
 
-  // Open target="_blank" links in the system browser, not inside Electron
+  // Route target="_blank" links to the system browser
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
     return { action: 'deny' };
   });
 
-  // Also intercept navigation to external URLs
+  // Intercept any navigation away from localhost so external links open properly
   mainWindow.webContents.on('will-navigate', (event, url) => {
     if (!url.startsWith(`http://localhost:${PORT}`)) {
       event.preventDefault();
@@ -75,20 +90,17 @@ async function createWindow() {
     }
   });
 
+  const appRoot = getAppRoot();
+
   if (isDev) {
-    // In dev mode next dev is already running (started by electron:dev script)
-    console.log(`[electron] Dev mode — connecting to http://localhost:${PORT}`);
-    await waitOn({
-      resources: [`http://localhost:${PORT}`],
-      timeout: 30_000,
-    });
+    // Development: `npm run dev` is already running in another terminal
+    console.log('[electron] waiting for Next.js dev server...');
+    await waitForPort(PORT);
   } else {
-    // In production, start the Next.js server ourselves
-    startNextServer();
-    await waitOn({
-      resources: [`http://localhost:${PORT}`],
-      timeout: 60_000,
-    });
+    // Production: set the data-dir env var BEFORE Next.js loads (db.ts reads it at import time)
+    process.env.GOOD_READER_DATA_DIR = app.getPath('userData');
+    process.env.NODE_ENV = 'production';
+    await startNextServer(appRoot);
   }
 
   mainWindow.loadURL(`http://localhost:${PORT}`);
@@ -96,16 +108,11 @@ async function createWindow() {
 
 app.whenReady().then(createWindow);
 
-// Re-open window on macOS when clicking the dock icon
+// Re-open on macOS when clicking the dock icon with no windows open
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
 app.on('window-all-closed', () => {
-  nextProcess?.kill();
   if (process.platform !== 'darwin') app.quit();
-});
-
-app.on('before-quit', () => {
-  nextProcess?.kill();
 });
