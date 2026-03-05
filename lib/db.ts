@@ -2,7 +2,11 @@ import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-const DB_PATH = path.join(process.cwd(), 'data', 'good-reader.db');
+// In production Electron builds, GOOD_READER_DATA_DIR is set to the OS
+// user-data directory (e.g. ~/Library/Application Support/Good Reader on macOS).
+// In development / plain Next.js, fall back to the local data/ folder.
+const dataDir = process.env.GOOD_READER_DATA_DIR || path.join(process.cwd(), 'data');
+const DB_PATH = path.join(dataDir, 'good-reader.db');
 
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 

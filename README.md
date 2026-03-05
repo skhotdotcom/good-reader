@@ -84,6 +84,7 @@ All shortcuts are **customizable** in Settings.
 | RSS parsing | rss-parser |
 | HTML parsing | jsdom (OPML import, feed discovery) |
 | AI | LM Studio (OpenAI-compatible local API) |
+| Desktop | Electron (wraps Next.js server natively) |
 
 ---
 
@@ -117,6 +118,29 @@ The SQLite database is created automatically at `data/good-reader.db` on first r
 1. Export an OPML file from your current reader
 2. Click **···** → **Import OPML** in Good Reader
 3. All feeds and folders are imported automatically
+
+### Running as a Desktop App (Electron)
+
+Good Reader can run as a native desktop app on macOS and Windows via Electron.
+
+**Development (live reload):**
+```bash
+npm run electron:dev
+```
+This starts Next.js and Electron together. The app opens in a native window.
+
+**Build a distributable:**
+```bash
+npm run electron:build:mac   # macOS → dist-electron/*.dmg
+npm run electron:build:win   # Windows → dist-electron/*.exe
+npm run electron:build       # current platform
+```
+
+> **Note:** The first build requires `next build` to run, which compiles the app. The resulting package includes a bundled Next.js server — no separate install needed on the target machine.
+>
+> On macOS you can build both Intel (`x64`) and Apple Silicon (`arm64`) DMGs from the same command. Cross-compiling a Windows `.exe` from macOS requires Wine or a Windows CI runner.
+
+The database is stored in the OS user-data directory (`~/Library/Application Support/Good Reader/` on macOS, `%APPDATA%\Good Reader\` on Windows) so it persists across app updates.
 
 ### AI Features Setup
 
@@ -165,6 +189,9 @@ lib/
   keybindings.ts          — keybinding types, defaults, localStorage
   lmstudio.ts             — LM Studio config types, localStorage
   utils.ts                — shadcn cn() helper
+electron/
+  main.js                 — Electron main process; spawns Next.js server + BrowserWindow
+  preload.js              — renderer preload (context isolation)
 scripts/
   backfill-favicons.mjs   — one-time script to populate favicon_url for existing feeds
 ```
@@ -201,6 +228,7 @@ scripts/
 - [ ] Dark / light mode toggle
 - [ ] "Read later" queue
 - [ ] Mobile-responsive layout
+- [x] Electron wrapper — native desktop app for macOS and Windows
 - [ ] PWA support for offline reading
 
 ---
