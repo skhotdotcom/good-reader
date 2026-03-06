@@ -57,6 +57,12 @@ export default function Home() {
   const [lmStudioConfig, setLmStudioConfig] = useState<LMStudioConfig>(loadLMStudioConfig);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQ, setDebouncedQ] = useState('');
+  const [isElectron, setIsElectron] = useState(false);
+
+  // Detect Electron for macOS title bar spacing
+  useEffect(() => {
+    setIsElectron(navigator.userAgent.includes('Electron'));
+  }, []);
 
   // Debounce searchQuery → debouncedQ
   useEffect(() => {
@@ -282,6 +288,9 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      {isElectron && (
+        <div className="flex-shrink-0 h-7" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
+      )}
       <TopBar
         onAddFeed={() => setAddFeedOpen(true)}
         onRefreshAll={handleRefreshAll}

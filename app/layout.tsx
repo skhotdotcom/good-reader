@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Good Reader",
-  description: "A local-first RSS reader",
+  description: "A local-first RSS reader inspired by Google Reader. Built with Next.js, SQLite, and Tailwind CSS. Runs entirely on your machine — no accounts, no cloud, no tracking.",
 };
 
 export default function RootLayout({

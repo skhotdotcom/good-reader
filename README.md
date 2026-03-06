@@ -91,21 +91,35 @@ All shortcuts are **customizable** in Settings.
 ## Getting Started
 
 ### Prerequisites
-- Node.js 18+
-- npm
+- Node.js 18+ ([download](https://nodejs.org))
+- npm (comes with Node.js)
+- Git
 
 ### Install & Run
 
 ```bash
-git clone <repo-url>
+# Clone the repo
+git clone https://github.com/scottpurcell/good-reader.git
 cd good-reader
+
+# Install dependencies
 npm install
+
+# Start the dev server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-The SQLite database is created automatically at `data/good-reader.db` on first run.
+The SQLite database is created automatically at `data/good-reader.db` on first run — nothing extra to set up.
+
+### Verify Node.js version
+
+```bash
+node -v  # should print v18.x.x or higher
+```
+
+If you need to upgrade Node, use [nvm](https://github.com/nvm-sh/nvm) (`nvm install 20 && nvm use 20`) or download from nodejs.org.
 
 ### Adding Feeds
 
@@ -225,11 +239,15 @@ scripts/
 - [x] Feed metadata (title, URL, favicon) updated on every refresh
 
 ### Backlog
+- [x] Electron wrapper — native desktop app for macOS and Windows
 - [ ] Dark / light mode toggle
 - [ ] "Read later" queue
 - [ ] Mobile-responsive layout
-- [x] Electron wrapper — native desktop app for macOS and Windows
 - [ ] PWA support for offline reading
+- [ ] Distribute signed macOS DMG via GitHub Releases
+- [ ] Per-feed refresh interval settings
+- [ ] Article sharing (copy link, share sheet)
+- [ ] Swipe gestures on mobile / trackpad
 
 ---
 
