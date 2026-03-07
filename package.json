@@ -19,6 +19,11 @@
     "appId": "com.goodreader.app",
     "productName": "Good Reader",
     "asar": false,
+    "publish": {
+      "provider": "github",
+      "owner": "skhotdotcom",
+      "repo": "good-reader"
+    },
     "directories": {
       "output": "dist-electron"
     },
@@ -73,6 +78,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "dompurify": "^3.3.1",
+    "electron-updater": "^6.8.3",
     "jsdom": "^28.1.0",
     "lucide-react": "^0.577.0",
     "next": "16.1.6",

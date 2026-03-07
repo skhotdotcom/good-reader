@@ -1,6 +1,7 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, dialog } = require('electron');
 const path = require('path');
 const http = require('http');
+const { autoUpdater } = require('electron-updater');
 
 const PORT = parseInt(process.env.PORT || '3000', 10);
 const isDev = !app.isPackaged;
@@ -102,7 +103,54 @@ async function createWindow() {
   }
 }
 
-app.whenReady().then(createWindow);
+function setupAutoUpdater() {
+  // Don't check for updates in dev mode
+  if (isDev) return;
+
+  autoUpdater.autoDownload = process.platform !== 'darwin'; // macOS: unsigned builds can't auto-install
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('update-available', (info) => {
+    if (process.platform === 'darwin') {
+      // macOS unsigned: can't auto-install — open GitHub Releases instead
+      dialog.showMessageBox(mainWindow, {
+        type: 'info',
+        title: 'Update Available',
+        message: `Good Reader ${info.version} is available.`,
+        detail: 'Download the new version from GitHub Releases.',
+        buttons: ['Download', 'Later'],
+        defaultId: 0,
+      }).then(({ response }) => {
+        if (response === 0) shell.openExternal('https://github.com/skhotdotcom/good-reader/releases/latest');
+      });
+    }
+    // Windows: download starts automatically
+  });
+
+  autoUpdater.on('update-downloaded', () => {
+    dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      title: 'Update Ready',
+      message: 'A new version of Good Reader has been downloaded.',
+      detail: 'Restart the app to apply the update.',
+      buttons: ['Restart Now', 'Later'],
+      defaultId: 0,
+    }).then(({ response }) => {
+      if (response === 0) autoUpdater.quitAndInstall();
+    });
+  });
+
+  autoUpdater.on('error', (err) => {
+    console.error('[updater] error:', err.message);
+  });
+
+  // Check after a short delay so the window is ready
+  setTimeout(() => autoUpdater.checkForUpdates(), 5000);
+}
+
+app.whenReady().then(() => {
+  createWindow().then(setupAutoUpdater);
+});
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
