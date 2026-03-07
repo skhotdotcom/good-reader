@@ -59,13 +59,13 @@ And if you really love it: [buy me a coffee](https://paypal.me/heavycreams). Hon
 |-----|--------|
 | `j` | Next article |
 | `k` | Previous article |
-| `Enter` | Open original in browser |
+| `o` / `Enter` | Open original in browser |
 | `s` | Star / unstar |
 | `m` | Toggle read/unread |
 | `r` | Refresh all feeds |
 | `?` | Show keyboard shortcut help |
 
-All shortcuts are **customizable** in Settings.
+`j`, `k`, `o`, `s`, and `m` are **customizable** in Settings. `r`, `Enter`, and `?` are always active.
 
 ### Settings
 - Switch between **3-panel** and **2-panel** layout modes
@@ -173,7 +173,7 @@ The database is stored in the OS user-data directory (`~/Library/Application Sup
 1. Download and open [LM Studio](https://lmstudio.ai/)
 2. Load a model (e.g. `meta-llama-3.1-8b-instruct`)
 3. Start the local server (default port: `1234`)
-4. In Good Reader: **···** → **Settings** → **AI**
+4. In Good Reader: **Settings** (sidebar) → **AI Summarization**
 5. Set the model name to match what's shown in LM Studio → **Save**
 6. Open any article and click **✨ Summarize** or **🏷 Auto-tag**
 
