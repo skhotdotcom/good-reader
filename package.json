@@ -11,9 +11,9 @@
     "start": "next start",
     "lint": "eslint",
     "electron:dev": "concurrently --kill-others \"npm run dev\" \"electron .\"",
-    "electron:build": "npm run build && electron-builder",
-    "electron:build:mac": "npm run build && electron-builder --mac",
-    "electron:build:win": "npm run build && electron-builder --win"
+    "electron:build": "npm rebuild better-sqlite3 && npm run build && electron-builder",
+    "electron:build:mac": "npm rebuild better-sqlite3 && npm run build && electron-builder --mac",
+    "electron:build:win": "npm rebuild better-sqlite3 && npm run build && electron-builder --win"
   },
   "build": {
     "appId": "com.goodreader.app",

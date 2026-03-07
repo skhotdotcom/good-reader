@@ -22,6 +22,7 @@ And if you really love it: [buy me a coffee](https://paypal.me/heavycreams). Hon
 
 ### Core Reading Experience
 - **Three-panel layout** — folders/feeds sidebar, article list, reading pane
+- **Two-panel layout** — focus mode that swaps between list and reader; toggle in Settings
 - **Unread & Starred views** — fixed items at the top of the sidebar; Unread is the default view
 - **Article content** — full article body rendered in a clean typography layout
 - **Open original** — open the source article in a new tab
@@ -67,6 +68,7 @@ And if you really love it: [buy me a coffee](https://paypal.me/heavycreams). Hon
 All shortcuts are **customizable** in Settings.
 
 ### Settings
+- Switch between **3-panel** and **2-panel** layout modes
 - Remap any keyboard shortcut from a curated list of alternatives
 - Configure LM Studio server URL and model name
 - Settings persist in `localStorage`
@@ -137,6 +139,18 @@ If you need to upgrade Node, use [nvm](https://github.com/nvm-sh/nvm) (`nvm inst
 
 Good Reader can run as a native desktop app on macOS and Windows via Electron.
 
+**Download a pre-built release:**
+
+The easiest way to get the desktop app is to download a release from the [GitHub Releases page](https://github.com/skhotdotcom/good-reader/releases).
+
+| Platform | File |
+|---|---|
+| macOS Apple Silicon (M1/M2/M3) | `Good Reader-x.x.x-arm64.dmg` |
+| macOS Intel | `Good Reader-x.x.x.dmg` |
+| Windows | `Good Reader Setup x.x.x.exe` |
+
+> **macOS note:** Builds are currently unsigned. On first launch, right-click the app → **Open** to bypass Gatekeeper.
+
 **Development (live reload):**
 ```bash
 npm run electron:dev
@@ -150,9 +164,7 @@ npm run electron:build:win   # Windows → dist-electron/*.exe
 npm run electron:build       # current platform
 ```
 
-> **Note:** The first build requires `next build` to run, which compiles the app. The resulting package includes a bundled Next.js server — no separate install needed on the target machine.
->
-> On macOS you can build both Intel (`x64`) and Apple Silicon (`arm64`) DMGs from the same command. Cross-compiling a Windows `.exe` from macOS requires Wine or a Windows CI runner.
+> The build scripts automatically rebuild native modules (`better-sqlite3`) for the correct Electron Node version before compiling. On macOS, both Intel (`x64`) and Apple Silicon (`arm64`) DMGs are built from a single command. Cross-compiling a Windows `.exe` from macOS uses Wine (downloaded automatically by electron-builder).
 
 The database is stored in the OS user-data directory (`~/Library/Application Support/Good Reader/` on macOS, `%APPDATA%\Good Reader\` on Windows) so it persists across app updates.
 
@@ -201,6 +213,7 @@ lib/
   db.ts                   — SQLite singleton + schema migrations + FTS5 + tags tables
   feed-fetcher.ts         — rss-parser wrapper + async favicon resolution
   keybindings.ts          — keybinding types, defaults, localStorage
+  layout.ts               — layout mode types, defaults, localStorage
   lmstudio.ts             — LM Studio config types, localStorage
   utils.ts                — shadcn cn() helper
 electron/
@@ -237,14 +250,16 @@ scripts/
 - [x] Auto-tag articles with LLM (creates new tags freely)
 - [x] Feed favicons via `<link rel="icon">` parsing (not just `/favicon.ico`)
 - [x] Feed metadata (title, URL, favicon) updated on every refresh
+- [x] Electron wrapper — native desktop app for macOS and Windows
+- [x] GitHub Releases with pre-built DMG and Windows installer
+- [x] Two-panel layout mode (focus view)
 
 ### Backlog
-- [x] Electron wrapper — native desktop app for macOS and Windows
 - [ ] Dark / light mode toggle
 - [ ] "Read later" queue
 - [ ] Mobile-responsive layout
 - [ ] PWA support for offline reading
-- [ ] Distribute signed macOS DMG via GitHub Releases
+- [ ] Signed macOS DMG (requires Apple Developer account)
 - [ ] Per-feed refresh interval settings
 - [ ] Article sharing (copy link, share sheet)
 - [ ] Swipe gestures on mobile / trackpad
