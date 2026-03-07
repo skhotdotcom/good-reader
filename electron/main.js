@@ -2,8 +2,6 @@ const { app, BrowserWindow, shell, dialog } = require('electron');
 const path = require('path');
 const http = require('http');
 const net = require('net');
-const { autoUpdater } = require('electron-updater');
-
 const isDev = !app.isPackaged;
 
 // In dev, connect to the already-running Next.js dev server on 3000.
@@ -120,6 +118,8 @@ async function createWindow() {
 function setupAutoUpdater() {
   // Don't check for updates in dev mode
   if (isDev) return;
+
+  const { autoUpdater } = require('electron-updater');
 
   autoUpdater.autoDownload = process.platform !== 'darwin'; // macOS: unsigned builds can't auto-install
   autoUpdater.autoInstallOnAppQuit = true;

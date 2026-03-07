@@ -10,7 +10,7 @@ import { KeyboardShortcutsDialog } from '@/components/keyboard-shortcuts';
 import { SettingsDialog } from '@/components/settings-dialog';
 import { loadKeybindings, type Keybindings } from '@/lib/keybindings';
 import { loadLMStudioConfig, type LMStudioConfig } from '@/lib/lmstudio';
-import { loadLayout, type LayoutMode } from '@/lib/layout';
+import { loadLayout, DEFAULT_LAYOUT, type LayoutMode } from '@/lib/layout';
 import { toast } from 'sonner';
 import type { TagItem } from '@/components/sidebar';
 
@@ -56,7 +56,7 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [keybindings, setKeybindings] = useState<Keybindings>(loadKeybindings);
   const [lmStudioConfig, setLmStudioConfig] = useState<LMStudioConfig>(loadLMStudioConfig);
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>(loadLayout);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(DEFAULT_LAYOUT);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQ, setDebouncedQ] = useState('');
   const [isElectron, setIsElectron] = useState(false);
@@ -64,6 +64,11 @@ export default function Home() {
   // Detect Electron for macOS title bar spacing
   useEffect(() => {
     setIsElectron(navigator.userAgent.includes('Electron'));
+  }, []);
+
+  // Load layout from localStorage after hydration to avoid SSR mismatch
+  useEffect(() => {
+    setLayoutMode(loadLayout());
   }, []);
 
   // Debounce searchQuery → debouncedQ
