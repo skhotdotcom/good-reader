@@ -1,6 +1,6 @@
 {
   "name": "good-reader",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "A local-first RSS reader inspired by Google Reader. Built with Next.js, SQLite, and Tailwind CSS. Runs entirely on your machine — no accounts, no cloud, no tracking.",
   "author": "Hello Partner (SP)",
