@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { TopBar } from '@/components/top-bar';
 import { Sidebar } from '@/components/sidebar';
 import { ArticleList, type Article, type ArticleTag } from '@/components/article-list';
@@ -47,6 +47,7 @@ export default function Home() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [selection, setSelection] = useState<Selection>({ type: 'unread' });
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
+  const selectedArticleRef = useRef<Article | null>(null);
   const [selectedArticleIndex, setSelectedArticleIndex] = useState<number>(-1);
   const [articlesLoading, setArticlesLoading] = useState(false);
   const [articlesHasMore, setArticlesHasMore] = useState(false);
@@ -60,6 +61,9 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQ, setDebouncedQ] = useState('');
   const [isElectron, setIsElectron] = useState(false);
+
+  // Keep ref in sync so async callbacks can read current selectedArticle
+  useEffect(() => { selectedArticleRef.current = selectedArticle; }, [selectedArticle]);
 
   // Detect Electron for macOS title bar spacing
   useEffect(() => {
@@ -94,7 +98,7 @@ export default function Home() {
     setFolders(foldersData);
   }, []);
 
-  const fetchArticles = useCallback(async (sel: Selection, offset = 0, append = false, q = '') => {
+  const fetchArticles = useCallback(async (sel: Selection, offset = 0, append = false, q = '', preserveSelected?: Article | null) => {
     if (sel.type === 'settings') return;
     if (append) setLoadingMore(true);
     else setArticlesLoading(true);
@@ -115,8 +119,14 @@ export default function Home() {
         setArticles((prev) => [...prev, ...newArticles]);
       } else {
         setArticles(newArticles);
-        setSelectedArticle(null);
-        setSelectedArticleIndex(-1);
+        if (preserveSelected !== undefined) {
+          const newIndex = newArticles.findIndex((a) => a.id === preserveSelected?.id);
+          setSelectedArticle(newIndex >= 0 ? newArticles[newIndex] : null);
+          setSelectedArticleIndex(newIndex);
+        } else {
+          setSelectedArticle(null);
+          setSelectedArticleIndex(-1);
+        }
       }
       setArticlesHasMore(offset + newArticles.length < data.total);
     } catch {
@@ -151,7 +161,7 @@ export default function Home() {
         .then(async (data) => {
           toast.success('Refreshed ' + data.succeeded + ' feeds' + (data.failed > 0 ? ', ' + data.failed + ' failed' : ''));
           await fetchSidebarData();
-          fetchArticles({ type: 'unread' }, 0, false, '');
+          fetchArticles({ type: 'unread' }, 0, false, '', selectedArticleRef.current);
         })
         .catch(() => toast.error('Refresh failed'))
         .finally(() => setRefreshing(false));
@@ -240,13 +250,13 @@ export default function Home() {
       const data = await res.json();
       toast.success('Refreshed ' + data.succeeded + ' feeds' + (data.failed > 0 ? ', ' + data.failed + ' failed' : ''));
       await fetchSidebarData();
-      await fetchArticles(selection, 0, false, debouncedQ);
+      await fetchArticles(selection, 0, false, debouncedQ, selectedArticle);
     } catch {
       toast.error('Refresh failed');
     } finally {
       setRefreshing(false);
     }
-  }, [fetchSidebarData, fetchArticles, selection, debouncedQ]);
+  }, [fetchSidebarData, fetchArticles, selection, debouncedQ, selectedArticle]);
 
   // Update article tags in both articles list and selectedArticle
   const handleArticleTagsChange = useCallback((articleId: number, newTags: ArticleTag[]) => {

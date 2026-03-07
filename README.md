@@ -253,6 +253,12 @@ scripts/
 - [x] Electron wrapper — native desktop app for macOS and Windows
 - [x] GitHub Releases with pre-built DMG and Windows installer
 - [x] Two-panel layout mode (focus view)
+- [x] Settings as a sidebar nav item (mutually exclusive with feed/folder/tag views)
+- [x] Settings: 3-column layout with General, Shortcuts, AI, and Data sections
+- [x] OPML import/export moved into Settings → Data (removed ··· dropdown from top bar)
+- [x] Settings auto-save — all changes apply immediately, no Save/Cancel needed
+- [x] Auto-refresh feeds when switching to Unread view (no separate Refresh All button)
+- [x] 2-panel fix: preserve selected article during background feed refreshes
 
 ### Backlog
 - [ ] Dark / light mode toggle
