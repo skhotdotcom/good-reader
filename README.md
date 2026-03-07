@@ -266,6 +266,37 @@ scripts/
 
 ---
 
+## Releasing a New Version
+
+```bash
+# 1. Bump the version (updates package.json, commits, and creates a git tag)
+npm version patch   # bug fixes:    0.2.0 → 0.2.1
+npm version minor   # new features: 0.2.0 → 0.3.0
+npm version major   # breaking:     0.2.0 → 1.0.0
+
+# 2. Push the commit and tag
+git push origin main --tags
+
+# 3. Build the distributables
+npm run electron:build:mac   # creates dist-electron/*.dmg
+npm run electron:build:win   # creates dist-electron/*.exe
+
+# 4. Create a GitHub Release and upload the artifacts
+gh release create vX.X.X \
+  "dist-electron/Good Reader-X.X.X-arm64.dmg#macOS (Apple Silicon)" \
+  "dist-electron/Good Reader-X.X.X.dmg#macOS (Intel)" \
+  "dist-electron/Good Reader Setup X.X.X.exe#Windows Installer" \
+  --title "Good Reader vX.X.X" \
+  --notes "## What's new
+- ..."
+```
+
+Or create the release manually via **GitHub → Releases → Draft a new release**, pick the tag, and drag the files from `dist-electron/` into the assets area.
+
+> **Note:** `gh` CLI must be authenticated (`gh auth login`). The build scripts handle `npm rebuild better-sqlite3` automatically before each build — no manual step needed.
+
+---
+
 ## Development Notes
 
 - All API routes require `export const dynamic = 'force-dynamic'` to prevent build-time SQLite errors
