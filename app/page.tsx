@@ -302,7 +302,6 @@ export default function Home() {
         onAddFeed={() => setAddFeedOpen(true)}
         onRefreshAll={handleRefreshAll}
         refreshing={refreshing}
-        onDataChange={fetchSidebarData}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -330,6 +329,7 @@ export default function Home() {
             onLMStudioConfigChange={setLmStudioConfig}
             layoutMode={layoutMode}
             onLayoutModeChange={setLayoutMode}
+            onDataChange={fetchSidebarData}
           />
         ) : (
           <>
