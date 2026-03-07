@@ -29,6 +29,8 @@ import {
   DEFAULT_LMSTUDIO_CONFIG,
   saveLMStudioConfig,
 } from '@/lib/lmstudio';
+import { type LayoutMode, DEFAULT_LAYOUT, saveLayout } from '@/lib/layout';
+import { cn } from '@/lib/utils';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -37,6 +39,8 @@ interface SettingsDialogProps {
   onKeybindingsChange: (kb: Keybindings) => void;
   lmStudioConfig: LMStudioConfig;
   onLMStudioConfigChange: (config: LMStudioConfig) => void;
+  layoutMode: LayoutMode;
+  onLayoutModeChange: (mode: LayoutMode) => void;
 }
 
 interface BindingRowProps {
@@ -78,14 +82,18 @@ export function SettingsDialog({
   onKeybindingsChange,
   lmStudioConfig,
   onLMStudioConfigChange,
+  layoutMode,
+  onLayoutModeChange,
 }: SettingsDialogProps) {
   const [draft, setDraft] = useState<Keybindings>(keybindings ?? DEFAULT_KEYBINDINGS);
   const [lmDraft, setLmDraft] = useState<LMStudioConfig>(lmStudioConfig ?? DEFAULT_LMSTUDIO_CONFIG);
+  const [layoutDraft, setLayoutDraft] = useState<LayoutMode>(layoutMode ?? DEFAULT_LAYOUT);
 
   function handleOpenChange(v: boolean) {
     if (v) {
       setDraft(keybindings ?? DEFAULT_KEYBINDINGS);
       setLmDraft(lmStudioConfig ?? DEFAULT_LMSTUDIO_CONFIG);
+      setLayoutDraft(layoutMode ?? DEFAULT_LAYOUT);
     }
     onOpenChange(v);
   }
@@ -103,12 +111,15 @@ export function SettingsDialog({
     onKeybindingsChange(draft);
     saveLMStudioConfig(lmDraft);
     onLMStudioConfigChange(lmDraft);
+    saveLayout(layoutDraft);
+    onLayoutModeChange(layoutDraft);
     onOpenChange(false);
   }
 
   function handleReset() {
     setDraft(DEFAULT_KEYBINDINGS);
     setLmDraft(DEFAULT_LMSTUDIO_CONFIG);
+    setLayoutDraft(DEFAULT_LAYOUT);
   }
 
   return (
@@ -119,8 +130,56 @@ export function SettingsDialog({
         </DialogHeader>
 
         <div className="space-y-1">
-          {/* Keyboard shortcuts */}
+          {/* Layout */}
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-1">
+            Layout
+          </p>
+          <div className="flex gap-3 py-2">
+            {([
+              {
+                mode: '3-panel' as LayoutMode,
+                label: '3-panel',
+                desc: 'Sidebar · List · Reader',
+                preview: (
+                  <div className="flex gap-0.5 h-8 w-20">
+                    <div className="w-4 rounded-sm bg-muted" />
+                    <div className="w-6 rounded-sm bg-muted" />
+                    <div className="flex-1 rounded-sm bg-muted" />
+                  </div>
+                ),
+              },
+              {
+                mode: '2-panel' as LayoutMode,
+                label: '2-panel',
+                desc: 'Sidebar · List or Reader',
+                preview: (
+                  <div className="flex gap-0.5 h-8 w-20">
+                    <div className="w-4 rounded-sm bg-muted" />
+                    <div className="flex-1 rounded-sm bg-muted" />
+                  </div>
+                ),
+              },
+            ] as const).map(({ mode, label, desc, preview }) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setLayoutDraft(mode)}
+                className={cn(
+                  'flex-1 flex flex-col items-center gap-1.5 p-3 rounded-lg border text-xs transition-colors',
+                  layoutDraft === mode
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border text-muted-foreground hover:border-foreground/40',
+                )}
+              >
+                {preview}
+                <span className="font-medium">{label}</span>
+                <span className="text-[10px] opacity-70">{desc}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Keyboard shortcuts */}
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-3">
             Keyboard Shortcuts
           </p>
           <div className="divide-y divide-border">

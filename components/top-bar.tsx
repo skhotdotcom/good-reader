@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { RefreshCw, Plus, Upload, Download, MoreHorizontal, Settings } from 'lucide-react';
+import { RefreshCw, Plus, Rss, Upload, Download, MoreHorizontal, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -76,7 +76,7 @@ export function TopBar({ onAddFeed, onRefreshAll, refreshing, onDataChange, onOp
   return (
     <div className="h-12 flex items-center justify-between px-4 border-b border-border bg-card flex-shrink-0">
       <div className="flex items-center gap-2">
-        <img src="/icon.svg" alt="Good Reader" className="h-5 w-5" />
+        <Rss className="h-5 w-5 text-primary" />
         <span className="font-semibold text-sm">Good Reader</span>
       </div>
 

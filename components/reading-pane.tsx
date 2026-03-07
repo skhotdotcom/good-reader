@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Star, ExternalLink, BookOpen, Sparkles, X, AlertCircle, Plus, Tags } from 'lucide-react';
+import { Star, ExternalLink, BookOpen, Sparkles, X, AlertCircle, Plus, Tags, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Article, ArticleTag } from './article-list';
@@ -15,6 +15,7 @@ interface ReadingPaneProps {
   allTags: ArticleTag[];
   onTagsChange: (articleId: number, tags: ArticleTag[]) => void;
   onTagCreated: () => void;
+  onBack?: () => void;
 }
 
 function formatDate(dateStr: string): string {
@@ -194,6 +195,7 @@ export function ReadingPane({
   allTags,
   onTagsChange,
   onTagCreated,
+  onBack,
 }: ReadingPaneProps) {
   const [sanitizedContent, setSanitizedContent] = useState('');
   const [summary, setSummary] = useState<string | null>(null);
@@ -292,6 +294,12 @@ export function ReadingPane({
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
       {/* Article header */}
       <div className="px-6 py-4 border-b border-border bg-card flex-shrink-0">
+        {onBack && (
+          <Button variant="ghost" size="sm" onClick={onBack} className="gap-1.5 text-xs -ml-2 mb-3">
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to list
+          </Button>
+        )}
         <h1 className="text-xl font-bold leading-tight mb-2">{article.title}</h1>
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground min-w-0">

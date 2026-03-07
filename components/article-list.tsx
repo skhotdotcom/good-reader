@@ -40,6 +40,7 @@ interface ArticleListProps {
   onLoadMore: () => void;
   searchQuery: string;
   onSearchChange: (q: string) => void;
+  className?: string;
 }
 
 function relativeTime(dateStr: string): string {
@@ -73,10 +74,11 @@ export function ArticleList({
   onLoadMore,
   searchQuery,
   onSearchChange,
+  className,
 }: ArticleListProps) {
   if (loading) {
     return (
-      <div className="w-[360px] flex-shrink-0 border-r border-border flex flex-col h-full overflow-hidden">
+      <div className={cn("w-[360px] flex-shrink-0 border-r border-border flex flex-col h-full overflow-hidden", className)}>
         <div className="px-3 py-2 border-b border-border bg-card flex-shrink-0 space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">Loading…</span>
@@ -94,7 +96,7 @@ export function ArticleList({
   }
 
   return (
-    <div className="w-[360px] flex-shrink-0 border-r border-border flex flex-col h-full overflow-hidden">
+    <div className={cn("w-[360px] flex-shrink-0 border-r border-border flex flex-col h-full overflow-hidden", className)}>
       {/* Header */}
       <div className="px-3 py-2 border-b border-border bg-card flex-shrink-0 space-y-2">
         <div className="flex items-center justify-between">

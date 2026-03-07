@@ -10,6 +10,7 @@ import { KeyboardShortcutsDialog } from '@/components/keyboard-shortcuts';
 import { SettingsDialog } from '@/components/settings-dialog';
 import { loadKeybindings, type Keybindings } from '@/lib/keybindings';
 import { loadLMStudioConfig, type LMStudioConfig } from '@/lib/lmstudio';
+import { loadLayout, type LayoutMode } from '@/lib/layout';
 import { toast } from 'sonner';
 import type { TagItem } from '@/components/sidebar';
 
@@ -55,6 +56,7 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [keybindings, setKeybindings] = useState<Keybindings>(loadKeybindings);
   const [lmStudioConfig, setLmStudioConfig] = useState<LMStudioConfig>(loadLMStudioConfig);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>(loadLayout);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQ, setDebouncedQ] = useState('');
   const [isElectron, setIsElectron] = useState(false);
@@ -313,29 +315,35 @@ export default function Home() {
           onTagsChange={fetchTags}
         />
 
-        <ArticleList
-          articles={articles}
-          selectedId={selectedArticle?.id ?? null}
-          onSelect={handleSelectArticle}
-          onToggleStar={handleToggleStar}
-          onMarkAllRead={handleMarkAllRead}
-          loading={articlesLoading}
-          hasMore={articlesHasMore}
-          loadingMore={loadingMore}
-          onLoadMore={handleLoadMore}
-          searchQuery={searchQuery}
-          onSearchChange={setSearchQuery}
-        />
+        {(layoutMode === '3-panel' || !selectedArticle) && (
+          <ArticleList
+            articles={articles}
+            selectedId={selectedArticle?.id ?? null}
+            onSelect={handleSelectArticle}
+            onToggleStar={handleToggleStar}
+            onMarkAllRead={handleMarkAllRead}
+            loading={articlesLoading}
+            hasMore={articlesHasMore}
+            loadingMore={loadingMore}
+            onLoadMore={handleLoadMore}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            className={layoutMode === '2-panel' ? 'flex-1 w-auto' : undefined}
+          />
+        )}
 
-        <ReadingPane
-          article={selectedArticle}
-          onToggleStar={handleToggleStar}
-          onToggleRead={handleToggleRead}
-          lmStudioConfig={lmStudioConfig}
-          allTags={allTagsForPicker}
-          onTagsChange={handleArticleTagsChange}
-          onTagCreated={fetchTags}
-        />
+        {(layoutMode === '3-panel' || !!selectedArticle) && (
+          <ReadingPane
+            article={selectedArticle}
+            onToggleStar={handleToggleStar}
+            onToggleRead={handleToggleRead}
+            lmStudioConfig={lmStudioConfig}
+            allTags={allTagsForPicker}
+            onTagsChange={handleArticleTagsChange}
+            onTagCreated={fetchTags}
+            onBack={layoutMode === '2-panel' ? () => { setSelectedArticle(null); setSelectedArticleIndex(-1); } : undefined}
+          />
+        )}
       </div>
 
       <AddFeedDialog
@@ -361,6 +369,8 @@ export default function Home() {
         onKeybindingsChange={setKeybindings}
         lmStudioConfig={lmStudioConfig}
         onLMStudioConfigChange={setLmStudioConfig}
+        layoutMode={layoutMode}
+        onLayoutModeChange={setLayoutMode}
       />
     </div>
   );
