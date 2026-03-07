@@ -322,7 +322,6 @@ export default function Home() {
 
         {settingsOpen ? (
           <SettingsPane
-            onClose={() => setSettingsOpen(false)}
             keybindings={keybindings}
             onKeybindingsChange={setKeybindings}
             lmStudioConfig={lmStudioConfig}
