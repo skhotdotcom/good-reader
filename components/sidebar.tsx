@@ -218,6 +218,17 @@ export function Sidebar({ feeds = [], folders = [], tags = [], selection, onSele
             <Inbox className="h-4 w-4 flex-shrink-0" />
             <span className="flex-1 text-left">All Items</span>
           </button>
+
+          <button
+            onClick={onOpenSettings}
+            className={cn(
+              'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors',
+              settingsOpen ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50 text-foreground'
+            )}
+          >
+            <Settings className="h-4 w-4 flex-shrink-0" />
+            <span className="flex-1 text-left">Settings</span>
+          </button>
         </div>
 
         <div className="mx-2 my-2 border-t border-border" />
@@ -393,7 +404,7 @@ export function Sidebar({ feeds = [], folders = [], tags = [], selection, onSele
       </div>
 
       {/* Footer */}
-      <div className="p-2 border-t border-border flex items-center gap-1">
+      <div className="p-2 border-t border-border">
         {newFolderMode ? (
           <Input
             autoFocus
@@ -405,31 +416,19 @@ export function Sidebar({ feeds = [], folders = [], tags = [], selection, onSele
               if (e.key === 'Enter') createFolder();
               if (e.key === 'Escape') { setNewFolderMode(false); setNewFolderName(''); }
             }}
-            className="h-7 text-sm flex-1"
+            className="h-7 text-sm w-full"
           />
         ) : (
           <Button
             variant="ghost"
             size="sm"
-            className="flex-1 text-muted-foreground hover:text-foreground"
+            className="w-full text-muted-foreground hover:text-foreground"
             onClick={() => setNewFolderMode(true)}
           >
             <Plus className="h-4 w-4 mr-1" />
             New Folder
           </Button>
         )}
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            'h-8 w-8 p-0 flex-shrink-0',
-            settingsOpen ? 'text-primary' : 'text-muted-foreground hover:text-foreground',
-          )}
-          onClick={onOpenSettings}
-          title="Settings"
-        >
-          <Settings className="h-4 w-4" />
-        </Button>
       </div>
     </div>
   );
