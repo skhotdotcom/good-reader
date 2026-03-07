@@ -37,7 +37,8 @@ type Selection =
   | { type: 'starred' }
   | { type: 'folder'; id: number }
   | { type: 'feed'; id: number }
-  | { type: 'tag'; id: number };
+  | { type: 'tag'; id: number }
+  | { type: 'settings' };
 
 export default function Home() {
   const [feeds, setFeeds] = useState<Feed[]>([]);
@@ -53,7 +54,6 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false);
   const [addFeedOpen, setAddFeedOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [keybindings, setKeybindings] = useState<Keybindings>(loadKeybindings);
   const [lmStudioConfig, setLmStudioConfig] = useState<LMStudioConfig>(loadLMStudioConfig);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>(DEFAULT_LAYOUT);
@@ -95,6 +95,7 @@ export default function Home() {
   }, []);
 
   const fetchArticles = useCallback(async (sel: Selection, offset = 0, append = false, q = '') => {
+    if (sel.type === 'settings') return;
     if (append) setLoadingMore(true);
     else setArticlesLoading(true);
     try {
@@ -131,17 +132,31 @@ export default function Home() {
     fetchTags();
   }, [fetchSidebarData, fetchTags]);
 
-  // Fetch whenever selection or debounced search query changes
+  // Fetch whenever selection or debounced search query changes (skip settings view)
   useEffect(() => {
-    fetchArticles(selection, 0, false, debouncedQ);
+    if (selection.type !== 'settings') {
+      fetchArticles(selection, 0, false, debouncedQ);
+    }
   }, [selection, debouncedQ, fetchArticles]);
 
-  // Reset search when selection changes
+  // Switching to Unread triggers a background feed refresh
   const handleSetSelection = useCallback((sel: Selection) => {
     setSelection(sel);
     setSearchQuery('');
     setDebouncedQ('');
-  }, []);
+    if (sel.type === 'unread' && selection.type !== 'unread' && !refreshing) {
+      setRefreshing(true);
+      fetch('/api/feeds/refresh-all', { method: 'POST' })
+        .then((r) => r.json())
+        .then(async (data) => {
+          toast.success('Refreshed ' + data.succeeded + ' feeds' + (data.failed > 0 ? ', ' + data.failed + ' failed' : ''));
+          await fetchSidebarData();
+          fetchArticles({ type: 'unread' }, 0, false, '');
+        })
+        .catch(() => toast.error('Refresh failed'))
+        .finally(() => setRefreshing(false));
+    }
+  }, [selection, refreshing, fetchSidebarData, fetchArticles]);
 
   const handleLoadMore = useCallback(() => {
     fetchArticles(selection, articles.length, true, debouncedQ);
@@ -237,7 +252,6 @@ export default function Home() {
   const handleArticleTagsChange = useCallback((articleId: number, newTags: ArticleTag[]) => {
     setArticles((prev) => prev.map((a) => (a.id === articleId ? { ...a, tags: newTags } : a)));
     setSelectedArticle((prev) => prev && prev.id === articleId ? { ...prev, tags: newTags } : prev);
-    // Refresh tag counts in sidebar
     fetchTags();
   }, [fetchTags]);
 
@@ -298,11 +312,7 @@ export default function Home() {
       {isElectron && (
         <div className="flex-shrink-0 h-7" style={{ WebkitAppRegion: 'drag' } as React.CSSProperties} />
       )}
-      <TopBar
-        onAddFeed={() => setAddFeedOpen(true)}
-        onRefreshAll={handleRefreshAll}
-        refreshing={refreshing}
-      />
+      <TopBar onAddFeed={() => setAddFeedOpen(true)} />
 
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
@@ -316,11 +326,9 @@ export default function Home() {
             fetchArticles(selection, 0, false, debouncedQ);
           }}
           onTagsChange={fetchTags}
-          onOpenSettings={() => setSettingsOpen((v) => !v)}
-          settingsOpen={settingsOpen}
         />
 
-        {settingsOpen ? (
+        {selection.type === 'settings' ? (
           <SettingsPane
             keybindings={keybindings}
             onKeybindingsChange={setKeybindings}

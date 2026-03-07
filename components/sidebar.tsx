@@ -43,7 +43,8 @@ type Selection =
   | { type: 'starred' }
   | { type: 'folder'; id: number }
   | { type: 'feed'; id: number }
-  | { type: 'tag'; id: number };
+  | { type: 'tag'; id: number }
+  | { type: 'settings' };
 
 interface SidebarProps {
   feeds: Feed[];
@@ -53,11 +54,9 @@ interface SidebarProps {
   onSelect: (sel: Selection) => void;
   onDataChange: () => void;
   onTagsChange: () => void;
-  onOpenSettings: () => void;
-  settingsOpen: boolean;
 }
 
-export function Sidebar({ feeds = [], folders = [], tags = [], selection, onSelect, onDataChange, onTagsChange, onOpenSettings, settingsOpen }: SidebarProps) {
+export function Sidebar({ feeds = [], folders = [], tags = [], selection, onSelect, onDataChange, onTagsChange }: SidebarProps) {
   const [collapsedFolders, setCollapsedFolders] = useState<Set<number>>(new Set());
   const initializedRef = useRef(false);
 
@@ -89,7 +88,7 @@ export function Sidebar({ feeds = [], folders = [], tags = [], selection, onSele
 
   function isSelected(sel: Selection) {
     if (selection.type !== sel.type) return false;
-    if (sel.type === 'all' || sel.type === 'unread' || sel.type === 'starred') return true;
+    if (sel.type === 'all' || sel.type === 'unread' || sel.type === 'starred' || sel.type === 'settings') return true;
     if (sel.type === 'folder' && selection.type === 'folder') return selection.id === sel.id;
     if (sel.type === 'feed' && selection.type === 'feed') return selection.id === sel.id;
     if (sel.type === 'tag' && selection.type === 'tag') return selection.id === sel.id;
@@ -220,10 +219,10 @@ export function Sidebar({ feeds = [], folders = [], tags = [], selection, onSele
           </button>
 
           <button
-            onClick={onOpenSettings}
+            onClick={() => onSelect({ type: 'settings' })}
             className={cn(
               'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors',
-              settingsOpen ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50 text-foreground'
+              isSelected({ type: 'settings' }) ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50 text-foreground'
             )}
           >
             <Settings className="h-4 w-4 flex-shrink-0" />
