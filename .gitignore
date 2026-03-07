@@ -47,3 +47,4 @@ next-env.d.ts
 
 # Icon exploration folder
 /icon-explore/
+dist-electron/
