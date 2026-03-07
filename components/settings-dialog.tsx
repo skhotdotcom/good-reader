@@ -1,13 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,9 +25,8 @@ import {
 import { type LayoutMode, DEFAULT_LAYOUT, saveLayout } from '@/lib/layout';
 import { cn } from '@/lib/utils';
 
-interface SettingsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface SettingsPaneProps {
+  onClose: () => void;
   keybindings: Keybindings;
   onKeybindingsChange: (kb: Keybindings) => void;
   lmStudioConfig: LMStudioConfig;
@@ -75,28 +67,18 @@ function BindingRow({ label, description, field: _field, value, options, onChang
   );
 }
 
-export function SettingsDialog({
-  open,
-  onOpenChange,
+export function SettingsPane({
+  onClose,
   keybindings,
   onKeybindingsChange,
   lmStudioConfig,
   onLMStudioConfigChange,
   layoutMode,
   onLayoutModeChange,
-}: SettingsDialogProps) {
+}: SettingsPaneProps) {
   const [draft, setDraft] = useState<Keybindings>(keybindings ?? DEFAULT_KEYBINDINGS);
   const [lmDraft, setLmDraft] = useState<LMStudioConfig>(lmStudioConfig ?? DEFAULT_LMSTUDIO_CONFIG);
   const [layoutDraft, setLayoutDraft] = useState<LayoutMode>(layoutMode ?? DEFAULT_LAYOUT);
-
-  function handleOpenChange(v: boolean) {
-    if (v) {
-      setDraft(keybindings ?? DEFAULT_KEYBINDINGS);
-      setLmDraft(lmStudioConfig ?? DEFAULT_LMSTUDIO_CONFIG);
-      setLayoutDraft(layoutMode ?? DEFAULT_LAYOUT);
-    }
-    onOpenChange(v);
-  }
 
   function update(field: keyof Keybindings, value: string) {
     setDraft((prev) => ({ ...prev, [field]: value }));
@@ -113,7 +95,7 @@ export function SettingsDialog({
     onLMStudioConfigChange(lmDraft);
     saveLayout(layoutDraft);
     onLayoutModeChange(layoutDraft);
-    onOpenChange(false);
+    onClose();
   }
 
   function handleReset() {
@@ -123,13 +105,16 @@ export function SettingsDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Settings</DialogTitle>
-        </DialogHeader>
+    <div className="flex-1 flex flex-col min-h-0 bg-background">
+      {/* Header */}
+      <div className="flex-shrink-0 h-12 flex items-center px-6 border-b border-border">
+        <h2 className="font-semibold text-sm">Settings</h2>
+      </div>
 
-        <div className="space-y-1">
+      {/* Scrollable content */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="max-w-lg px-6 py-4 space-y-1">
+
           {/* Layout */}
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-1">
             Layout
@@ -262,21 +247,22 @@ export function SettingsDialog({
             </div>
           </div>
         </div>
+      </div>
 
-        <DialogFooter className="flex items-center justify-between sm:justify-between pt-2">
-          <Button variant="ghost" size="sm" className="text-xs" onClick={handleReset}>
-            Reset to defaults
+      {/* Sticky footer */}
+      <div className="flex-shrink-0 flex items-center justify-between px-6 py-3 border-t border-border">
+        <Button variant="ghost" size="sm" className="text-xs" onClick={handleReset}>
+          Reset to defaults
+        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={onClose}>
+            Cancel
           </Button>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button size="sm" onClick={handleSave}>
-              Save
-            </Button>
-          </div>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <Button size="sm" onClick={handleSave}>
+            Save
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

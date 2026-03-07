@@ -7,7 +7,7 @@ import { ArticleList, type Article, type ArticleTag } from '@/components/article
 import { ReadingPane } from '@/components/reading-pane';
 import { AddFeedDialog } from '@/components/add-feed-dialog';
 import { KeyboardShortcutsDialog } from '@/components/keyboard-shortcuts';
-import { SettingsDialog } from '@/components/settings-dialog';
+import { SettingsPane } from '@/components/settings-dialog';
 import { loadKeybindings, type Keybindings } from '@/lib/keybindings';
 import { loadLMStudioConfig, type LMStudioConfig } from '@/lib/lmstudio';
 import { loadLayout, DEFAULT_LAYOUT, type LayoutMode } from '@/lib/layout';
@@ -303,7 +303,6 @@ export default function Home() {
         onRefreshAll={handleRefreshAll}
         refreshing={refreshing}
         onDataChange={fetchSidebarData}
-        onOpenSettings={() => setSettingsOpen(true)}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -318,36 +317,52 @@ export default function Home() {
             fetchArticles(selection, 0, false, debouncedQ);
           }}
           onTagsChange={fetchTags}
+          onOpenSettings={() => setSettingsOpen((v) => !v)}
+          settingsOpen={settingsOpen}
         />
 
-        {(layoutMode === '3-panel' || !selectedArticle) && (
-          <ArticleList
-            articles={articles}
-            selectedId={selectedArticle?.id ?? null}
-            onSelect={handleSelectArticle}
-            onToggleStar={handleToggleStar}
-            onMarkAllRead={handleMarkAllRead}
-            loading={articlesLoading}
-            hasMore={articlesHasMore}
-            loadingMore={loadingMore}
-            onLoadMore={handleLoadMore}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            className={layoutMode === '2-panel' ? 'flex-1 w-auto' : undefined}
-          />
-        )}
-
-        {(layoutMode === '3-panel' || !!selectedArticle) && (
-          <ReadingPane
-            article={selectedArticle}
-            onToggleStar={handleToggleStar}
-            onToggleRead={handleToggleRead}
+        {settingsOpen ? (
+          <SettingsPane
+            onClose={() => setSettingsOpen(false)}
+            keybindings={keybindings}
+            onKeybindingsChange={setKeybindings}
             lmStudioConfig={lmStudioConfig}
-            allTags={allTagsForPicker}
-            onTagsChange={handleArticleTagsChange}
-            onTagCreated={fetchTags}
-            onBack={layoutMode === '2-panel' ? () => { setSelectedArticle(null); setSelectedArticleIndex(-1); } : undefined}
+            onLMStudioConfigChange={setLmStudioConfig}
+            layoutMode={layoutMode}
+            onLayoutModeChange={setLayoutMode}
           />
+        ) : (
+          <>
+            {(layoutMode === '3-panel' || !selectedArticle) && (
+              <ArticleList
+                articles={articles}
+                selectedId={selectedArticle?.id ?? null}
+                onSelect={handleSelectArticle}
+                onToggleStar={handleToggleStar}
+                onMarkAllRead={handleMarkAllRead}
+                loading={articlesLoading}
+                hasMore={articlesHasMore}
+                loadingMore={loadingMore}
+                onLoadMore={handleLoadMore}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                className={layoutMode === '2-panel' ? 'flex-1 w-auto' : undefined}
+              />
+            )}
+
+            {(layoutMode === '3-panel' || !!selectedArticle) && (
+              <ReadingPane
+                article={selectedArticle}
+                onToggleStar={handleToggleStar}
+                onToggleRead={handleToggleRead}
+                lmStudioConfig={lmStudioConfig}
+                allTags={allTagsForPicker}
+                onTagsChange={handleArticleTagsChange}
+                onTagCreated={fetchTags}
+                onBack={layoutMode === '2-panel' ? () => { setSelectedArticle(null); setSelectedArticleIndex(-1); } : undefined}
+              />
+            )}
+          </>
         )}
       </div>
 
@@ -367,16 +382,6 @@ export default function Home() {
         keybindings={keybindings}
       />
 
-      <SettingsDialog
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-        keybindings={keybindings}
-        onKeybindingsChange={setKeybindings}
-        lmStudioConfig={lmStudioConfig}
-        onLMStudioConfigChange={setLmStudioConfig}
-        layoutMode={layoutMode}
-        onLayoutModeChange={setLayoutMode}
-      />
     </div>
   );
 }

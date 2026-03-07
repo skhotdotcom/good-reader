@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { RefreshCw, Plus, Rss, Upload, Download, MoreHorizontal, Settings } from 'lucide-react';
+import { RefreshCw, Plus, Rss, Upload, Download, MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,10 +19,9 @@ interface TopBarProps {
   onRefreshAll: () => void;
   refreshing: boolean;
   onDataChange: () => void;
-  onOpenSettings: () => void;
 }
 
-export function TopBar({ onAddFeed, onRefreshAll, refreshing, onDataChange, onOpenSettings }: TopBarProps) {
+export function TopBar({ onAddFeed, onRefreshAll, refreshing, onDataChange }: TopBarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleExport() {
@@ -113,11 +112,6 @@ export function TopBar({ onAddFeed, onRefreshAll, refreshing, onDataChange, onOp
             <DropdownMenuItem onClick={handleExport}>
               <Download className="h-4 w-4 mr-2" />
               Export OPML
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={onOpenSettings}>
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
