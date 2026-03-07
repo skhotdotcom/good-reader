@@ -1,10 +1,24 @@
 const { app, BrowserWindow, shell, dialog } = require('electron');
 const path = require('path');
 const http = require('http');
+const net = require('net');
 const { autoUpdater } = require('electron-updater');
 
-const PORT = parseInt(process.env.PORT || '3000', 10);
 const isDev = !app.isPackaged;
+
+// In dev, connect to the already-running Next.js dev server on 3000.
+// In production, pick a random free port so the app never conflicts with dev servers.
+function getFreePort() {
+  return new Promise((resolve) => {
+    const srv = net.createServer();
+    srv.listen(0, '127.0.0.1', () => {
+      const port = srv.address().port;
+      srv.close(() => resolve(port));
+    });
+  });
+}
+
+let PORT = 3000; // overwritten at startup in production
 
 // __dirname is always electron/ — going up one level gives the app root,
 // whether running in dev (filesystem) or packaged (app.asar or plain dir).
@@ -148,8 +162,10 @@ function setupAutoUpdater() {
   setTimeout(() => autoUpdater.checkForUpdates(), 5000);
 }
 
-app.whenReady().then(() => {
-  createWindow().then(setupAutoUpdater);
+app.whenReady().then(async () => {
+  if (!isDev) PORT = await getFreePort();
+  await createWindow();
+  setupAutoUpdater();
 });
 
 app.on('activate', () => {
