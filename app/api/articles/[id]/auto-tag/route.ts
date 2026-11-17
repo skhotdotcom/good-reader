@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { callAI, APIError } from '@/lib/ai-call';
 
 function stripHtml(html: string): string {
   return html
@@ -29,8 +30,10 @@ export async function POST(
 ) {
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
+  const protocol: string = body.protocol || 'lmstudio';
   const baseUrl: string = body.baseUrl || 'http://localhost:1234/v1';
   const model: string = body.model || 'local-model';
+  const apiKey: string = body.apiKey || '';
 
   const article = db
     .prepare('SELECT id, title, content, snippet FROM articles WHERE id = ?')
@@ -81,46 +84,32 @@ Rules:
 {"apply": ["library-tag"], "create": ["new-tag-1", "new-tag-2"]}`;
 
 
-  let lmResponse: Response;
+  let rawContent: string;
   try {
-    lmResponse = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a tagging assistant. Always respond with valid JSON only — no markdown, no explanation, just the JSON object.',
-          },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 300,
-        stream: false,
-      }),
+    const result = await callAI({
+      protocol: protocol as 'lmstudio' | 'openai' | 'anthropic',
+      baseUrl,
+      model,
+      apiKey,
+      systemPrompt: 'You are a tagging assistant. Always respond with valid JSON only — no markdown, no explanation, just the JSON object.',
+      userPrompt: prompt,
+      temperature: 0.3,
+      maxTokens: 300,
     });
+    rawContent = result.content;
   } catch (err: unknown) {
+    if (err instanceof APIError) {
+      return NextResponse.json({ error: err.message }, { status: 502 });
+    }
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: `Could not reach LM Studio at ${baseUrl}. Is it running?\n${message}` },
+      { error: `Could not reach AI endpoint at ${baseUrl}.\n${message}` },
       { status: 502 }
     );
   }
-
-  if (!lmResponse.ok) {
-    const errText = await lmResponse.text().catch(() => '');
-    return NextResponse.json(
-      { error: `LM Studio returned ${lmResponse.status}: ${errText}` },
-      { status: 502 }
-    );
-  }
-
-  const lmData = await lmResponse.json();
-  const rawContent: string = lmData.choices?.[0]?.message?.content?.trim() || '';
 
   if (!rawContent) {
-    return NextResponse.json({ error: 'LM Studio returned an empty response' }, { status: 502 });
+    return NextResponse.json({ error: 'AI returned an empty response' }, { status: 502 });
   }
 
   // Parse JSON — strip markdown code fences if present
@@ -133,7 +122,7 @@ Rules:
     const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return NextResponse.json(
-        { error: `Could not parse LM Studio response as JSON: ${rawContent.slice(0, 200)}` },
+        { error: `Could not parse AI response as JSON: ${rawContent.slice(0, 200)}` },
         { status: 502 }
       );
     }
@@ -141,7 +130,7 @@ Rules:
       parsed = JSON.parse(jsonMatch[0]);
     } catch {
       return NextResponse.json(
-        { error: `Invalid JSON in LM Studio response: ${rawContent.slice(0, 200)}` },
+        { error: `Invalid JSON in AI response: ${rawContent.slice(0, 200)}` },
         { status: 502 }
       );
     }

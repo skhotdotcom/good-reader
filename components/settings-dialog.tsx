@@ -19,7 +19,9 @@ import {
 } from '@/lib/keybindings';
 import {
   type LMStudioConfig,
+  type AIProtocol,
   DEFAULT_LMSTUDIO_CONFIG,
+  PROTOCOL_DEFAULTS,
   saveLMStudioConfig,
 } from '@/lib/lmstudio';
 import { type LayoutMode, saveLayout } from '@/lib/layout';
@@ -286,34 +288,87 @@ export function SettingsPane({
             {activeSection === 'ai' && (
               <>
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide pt-1">
-                  AI Summarization — LM Studio
+                  AI Protocol
                 </p>
-                <p className="text-xs text-muted-foreground pb-2">
-                  Requires LM Studio running locally with a model loaded.
-                </p>
-                <div className="space-y-3">
+                <div className="flex gap-2 py-2">
+                  {([
+                    { id: 'lmstudio' as AIProtocol, label: 'LM Studio', desc: 'Local server' },
+                    { id: 'openai' as AIProtocol, label: 'OpenAI-Compatible', desc: 'Any OAI endpoint' },
+                    { id: 'anthropic' as AIProtocol, label: 'Anthropic-Compatible', desc: 'Messages API' },
+                  ]).map(({ id, label, desc }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => {
+                        const defaults = PROTOCOL_DEFAULTS[id];
+                        const updated: LMStudioConfig = { ...defaults, apiKey: lmDraft.apiKey };
+                        setLmDraft(updated);
+                        saveLMStudioConfig(updated);
+                        onLMStudioConfigChange(updated);
+                      }}
+                      className={cn(
+                        'flex-1 flex flex-col items-center gap-0.5 px-2 py-2.5 rounded-lg border text-xs transition-colors',
+                        lmDraft.protocol === id
+                          ? 'border-primary bg-primary/10 text-primary'
+                          : 'border-border text-muted-foreground hover:border-foreground/40',
+                      )}
+                    >
+                      <span className="font-medium text-center leading-tight">{label}</span>
+                      <span className="text-[10px] opacity-70">{desc}</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  {lmDraft.protocol !== 'anthropic' && (
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Server URL</Label>
+                      <Input
+                        className="h-8 text-sm font-mono"
+                        value={lmDraft.baseUrl}
+                        onChange={(e) => updateLm('baseUrl', e.target.value)}
+                        placeholder={PROTOCOL_DEFAULTS[lmDraft.protocol].baseUrl}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {lmDraft.protocol === 'lmstudio'
+                          ? 'LM Studio local server address (default: port 1234)'
+                          : 'Base URL for the OpenAI-compatible endpoint'}
+                      </p>
+                    </div>
+                  )}
+
+                  {(lmDraft.protocol === 'openai' || lmDraft.protocol === 'anthropic') && (
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">API Key</Label>
+                      <Input
+                        className="h-8 text-sm font-mono"
+                        type="password"
+                        value={lmDraft.apiKey}
+                        onChange={(e) => updateLm('apiKey', e.target.value)}
+                        placeholder={lmDraft.protocol === 'anthropic' ? 'sk-ant-…' : 'sk-…'}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        {lmDraft.protocol === 'anthropic'
+                          ? 'Your Anthropic API key'
+                          : 'API key for the endpoint (leave empty if not required)'}
+                      </p>
+                    </div>
+                  )}
+
                   <div className="space-y-1.5">
-                    <Label className="text-sm">Server URL</Label>
-                    <Input
-                      className="h-8 text-sm font-mono"
-                      value={lmDraft.baseUrl}
-                      onChange={(e) => updateLm('baseUrl', e.target.value)}
-                      placeholder="http://localhost:1234/v1"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      LM Studio's local server address (default: port 1234)
-                    </p>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">Model name</Label>
+                    <Label className="text-sm">Model</Label>
                     <Input
                       className="h-8 text-sm font-mono"
                       value={lmDraft.model}
                       onChange={(e) => updateLm('model', e.target.value)}
-                      placeholder="local-model"
+                      placeholder={PROTOCOL_DEFAULTS[lmDraft.protocol].model}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Must match the model identifier shown in LM Studio
+                      {lmDraft.protocol === 'lmstudio'
+                        ? 'Must match the model identifier shown in LM Studio'
+                        : lmDraft.protocol === 'anthropic'
+                        ? 'e.g. claude-haiku-4-5-20251001, claude-sonnet-4-6'
+                        : 'e.g. gpt-4o-mini, gpt-4o'}
                     </p>
                   </div>
                 </div>

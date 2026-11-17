@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import db from '@/lib/db';
+import { callAI, APIError } from '@/lib/ai-call';
 
 function stripHtml(html: string): string {
   return html
@@ -24,8 +25,10 @@ export async function POST(
 ) {
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
+  const protocol: string = body.protocol || 'lmstudio';
   const baseUrl: string = body.baseUrl || 'http://localhost:1234/v1';
   const model: string = body.model || 'local-model';
+  const apiKey: string = body.apiKey || '';
 
   const article = db
     .prepare('SELECT title, content, snippet FROM articles WHERE id = ?')
@@ -50,47 +53,32 @@ Title: ${article.title}
 
 ${truncated}`;
 
-  let lmResponse: Response;
+  let summary: string;
   try {
-    lmResponse = await fetch(`${baseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        messages: [
-          {
-            role: 'system',
-            content:
-              'You are a concise summarization assistant. You summarize articles into clear, informative bullet points.',
-          },
-          { role: 'user', content: prompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 512,
-        stream: false,
-      }),
+    const result = await callAI({
+      protocol: protocol as 'lmstudio' | 'openai' | 'anthropic',
+      baseUrl,
+      model,
+      apiKey,
+      systemPrompt: 'You are a concise summarization assistant. You summarize articles into clear, informative bullet points.',
+      userPrompt: prompt,
+      temperature: 0.3,
+      maxTokens: 512,
     });
+    summary = result.content;
   } catch (err: unknown) {
+    if (err instanceof APIError) {
+      return NextResponse.json({ error: err.message }, { status: 502 });
+    }
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json(
-      { error: `Could not reach LM Studio at ${baseUrl}. Is it running?\n${message}` },
+      { error: `Could not reach AI endpoint at ${baseUrl}.\n${message}` },
       { status: 502 }
     );
   }
-
-  if (!lmResponse.ok) {
-    const errText = await lmResponse.text().catch(() => '');
-    return NextResponse.json(
-      { error: `LM Studio returned ${lmResponse.status}: ${errText}` },
-      { status: 502 }
-    );
-  }
-
-  const data = await lmResponse.json();
-  const summary: string = data.choices?.[0]?.message?.content?.trim() || '';
 
   if (!summary) {
-    return NextResponse.json({ error: 'LM Studio returned an empty response' }, { status: 502 });
+    return NextResponse.json({ error: 'AI returned an empty response' }, { status: 502 });
   }
 
   return NextResponse.json({ summary });

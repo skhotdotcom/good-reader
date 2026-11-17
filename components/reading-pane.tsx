@@ -228,7 +228,7 @@ export function ReadingPane({
       const res = await fetch(`/api/articles/${article.id}/summarize`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ baseUrl: lmStudioConfig.baseUrl, model: lmStudioConfig.model }),
+        body: JSON.stringify({ protocol: lmStudioConfig.protocol, baseUrl: lmStudioConfig.baseUrl, model: lmStudioConfig.model, apiKey: lmStudioConfig.apiKey }),
       });
       const data = await res.json();
       if (!res.ok || data.error) setSummaryError(data.error || 'Summarization failed');
@@ -249,7 +249,7 @@ export function ReadingPane({
       const res = await fetch(`/api/articles/${article.id}/auto-tag`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ baseUrl: lmStudioConfig.baseUrl, model: lmStudioConfig.model }),
+        body: JSON.stringify({ protocol: lmStudioConfig.protocol, baseUrl: lmStudioConfig.baseUrl, model: lmStudioConfig.model, apiKey: lmStudioConfig.apiKey }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {
